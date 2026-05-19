@@ -1,0 +1,74 @@
+services:
+  subscribe-api:
+    build:
+      context: ../subscribe-api
+    container_name: omm_subscribe_api
+    restart: unless-stopped
+    ports:
+      - "${SUBSCRIBE_API_PORT:-8787}:8787"
+    depends_on:
+      listmonk:
+        condition: service_started
+    environment:
+      PORT: 8787
+      LISTMONK_URL: http://listmonk:9000
+      LISTMONK_LIST_UUIDS: ${LISTMONK_LIST_UUIDS:-replace-with-list-uuid}
+      LISTMONK_DRY_RUN: ${LISTMONK_DRY_RUN:-true}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,https://www.ommelb.com.au,https://ommelb.com.au}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-12}
+      CONSENT_LOG_PATH: /app/data/consent-log.jsonl
+    volumes:
+      - subscribe-consent-logs:/app/data
+
+  listmonk:
+    image: listmonk/listmonk:latest
+    container_name: omm_listmonk_app
+    restart: unless-stopped
+    ports:
+      - "${LISTMONK_PORT:-9000}:9000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - ./listmonk --install --idempotent --yes --config '' && ./listmonk --upgrade --yes --config '' && ./listmonk --config ''
+    environment:
+      LISTMONK_app__address: 0.0.0.0:9000
+      LISTMONK_db__user: ${POSTGRES_USER:-listmonk}
+      LISTMONK_db__password: ${POSTGRES_PASSWORD:-listmonk}
+      LISTMONK_db__database: ${POSTGRES_DB:-listmonk}
+      LISTMONK_db__host: postgres
+      LISTMONK_db__port: 5432
+      LISTMONK_db__ssl_mode: disable
+      LISTMONK_db__max_open: 25
+      LISTMONK_db__max_idle: 25
+      LISTMONK_db__max_lifetime: 300s
+      LISTMONK_ADMIN_USER: ${LISTMONK_ADMIN_USER:-admin}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:-change-me-before-production}
+      TZ: Australia/Melbourne
+    volumes:
+      - ./uploads:/listmonk/uploads:rw
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: omm_listmonk_db
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-listmonk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-listmonk}
+      POSTGRES_DB: ${POSTGRES_DB:-listmonk}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-listmonk}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    volumes:
+      - listmonk-data:/var/lib/postgresql/data
+
+volumes:
+  listmonk-data:
+  subscribe-consent-logs:

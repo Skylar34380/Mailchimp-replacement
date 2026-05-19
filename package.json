@@ -1,0 +1,13 @@
+{
+  "name": "omm-newsletter-stack",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "npm --prefix subscribe-api test",
+    "test:dry-run": "npm --prefix subscribe-api run test:dry-run",
+    "api:start": "npm --prefix subscribe-api start",
+    "compose:config": "cd mailchimp-replacement && docker compose config",
+    "compose:up": "cd mailchimp-replacement && docker compose up -d --build",
+    "compose:down": "cd mailchimp-replacement && docker compose down"
+  }
+}
