@@ -7,22 +7,27 @@ export function normalizeSubscribeInput(input = {}) {
   const email = clean(input.email ?? "").toLowerCase();
 
   const name = suppliedName || [firstName, lastName].filter(Boolean).join(" ");
-  const source = clean(input.source ?? input.page ?? input.pageUrl ?? input.page_url ?? "wix");
+  const source = clean(input.source ?? input.page ?? input.pageUrl ?? input.page_url ?? "website");
   const consentText = clean(
     input.consentText ??
       input.consent_text ??
       input.consent ??
-      "I agree to receive property updates from Off Market Melbourne."
+      "I agree to receive newsletter updates."
   );
+  const attributes = pruneEmpty({
+    company: clean(input.company ?? input.organization ?? ""),
+    role: clean(input.role ?? input.jobTitle ?? input.job_title ?? ""),
+    interests: cleanList(input.interests ?? input.interest ?? input.tags ?? ""),
+    pageUrl: clean(input.pageUrl ?? input.page_url ?? ""),
+  });
 
   return {
     email,
     name,
     source,
     consentText,
-    suburbPreference: clean(input.suburbPreference ?? input.suburb ?? ""),
-    projectTypePreference: clean(input.projectTypePreference ?? input.projectType ?? input.project_type ?? ""),
-    honeypot: clean(input.website ?? input.company ?? input.honeypot ?? ""),
+    attributes,
+    honeypot: clean(input.website ?? input.honeypot ?? input._gotcha ?? ""),
   };
 }
 
@@ -44,4 +49,23 @@ export function validateSubscribeInput(input) {
 
 function clean(value) {
   return String(value ?? "").trim().slice(0, 500);
+}
+
+function cleanList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => clean(item)).filter(Boolean);
+  }
+
+  return clean(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function pruneEmpty(input) {
+  return Object.fromEntries(
+    Object.entries(input).filter(([, value]) =>
+      Array.isArray(value) ? value.length > 0 : Boolean(value)
+    )
+  );
 }

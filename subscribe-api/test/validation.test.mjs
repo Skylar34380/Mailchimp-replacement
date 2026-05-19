@@ -2,19 +2,24 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { normalizeSubscribeInput, validateSubscribeInput } from "../src/validation.mjs";
 
-test("normalizes Wix-style contact fields", () => {
+test("normalizes common website contact fields", () => {
   const input = normalizeSubscribeInput({
     firstName: " Ada ",
     lastName: " Lovelace ",
     email: " ADA@EXAMPLE.COM ",
-    pageUrl: "https://www.ommelb.com.au/",
-    suburb: "Yarraville",
+    pageUrl: "https://www.example.com/newsletter",
+    company: "Example Co",
+    interests: "product,events",
   });
 
   assert.equal(input.name, "Ada Lovelace");
   assert.equal(input.email, "ada@example.com");
-  assert.equal(input.source, "https://www.ommelb.com.au/");
-  assert.equal(input.suburbPreference, "Yarraville");
+  assert.equal(input.source, "https://www.example.com/newsletter");
+  assert.deepEqual(input.attributes, {
+    company: "Example Co",
+    interests: ["product", "events"],
+    pageUrl: "https://www.example.com/newsletter",
+  });
 });
 
 test("validates required email", () => {
@@ -25,7 +30,7 @@ test("validates required email", () => {
 
 test("rejects honeypot spam", () => {
   const errors = validateSubscribeInput(
-    normalizeSubscribeInput({ email: "buyer@example.com", website: "spam-company" })
+    normalizeSubscribeInput({ email: "reader@example.com", website: "spam-value" })
   );
   assert.equal(errors.some((error) => error.field === "honeypot"), true);
 });

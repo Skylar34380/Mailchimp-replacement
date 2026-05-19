@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createApp } from "../src/server.mjs";
 
-const tempDir = await mkdtemp(join(tmpdir(), "omm-subscribe-api-"));
+const tempDir = await mkdtemp(join(tmpdir(), "newsletter-subscribe-api-"));
 const consentLogPath = join(tempDir, "consent-log.jsonl");
 
 const app = createApp({
@@ -23,20 +23,20 @@ const server = await new Promise((resolve) => {
 
 try {
   const { port } = server.address();
-  const response = await fetch(`http://127.0.0.1:${port}/api/wix/subscribe`, {
+  const response = await fetch(`http://127.0.0.1:${port}/api/subscribe`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       origin: "http://localhost:5173",
     },
     body: JSON.stringify({
-      email: "buyer@example.com",
-      firstName: "Buyer",
+      email: "reader@example.com",
+      firstName: "Reader",
       lastName: "One",
-      source: "wix-home",
-      consentText: "I agree to receive OMM property updates.",
-      suburb: "Yarraville",
-      projectType: "Townhouse",
+      source: "website-home",
+      consentText: "I agree to receive newsletter updates.",
+      company: "Example Co",
+      interests: "product updates,events",
     }),
   });
 
@@ -47,7 +47,7 @@ try {
   console.log("API response:", JSON.stringify(body));
   console.log("Consent log:", log.trim());
 
-  if (!response.ok || body.ok !== true || !log.includes("buyer@example.com")) {
+  if (!response.ok || body.ok !== true || !log.includes("reader@example.com")) {
     process.exitCode = 1;
   }
 } finally {

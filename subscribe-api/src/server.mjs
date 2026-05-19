@@ -27,7 +27,7 @@ export function createApp(runtimeConfig = config) {
         200,
         {
           ok: true,
-          service: "omm-subscribe-api",
+          service: "newsletter-subscribe-api",
           listmonkUrl: runtimeConfig.listmonkUrl,
           dryRun: runtimeConfig.dryRun,
         },
@@ -36,7 +36,7 @@ export function createApp(runtimeConfig = config) {
       return;
     }
 
-    if (req.method === "POST" && ["/api/subscribe", "/api/wix/subscribe"].includes(url.pathname)) {
+    if (req.method === "POST" && url.pathname === "/api/subscribe") {
       const ip = clientIp(req);
       const limited = limiter(ip);
       if (!limited.allowed) {
@@ -73,8 +73,7 @@ export function createApp(runtimeConfig = config) {
           name: subscriber.name,
           source: subscriber.source,
           consentText: subscriber.consentText,
-          suburbPreference: subscriber.suburbPreference,
-          projectTypePreference: subscriber.projectTypePreference,
+          attributes: subscriber.attributes,
           listUuids: runtimeConfig.listUuids,
           listmonkStatus: result.status,
           dryRun: Boolean(result.dryRun),
@@ -126,7 +125,7 @@ export function createApp(runtimeConfig = config) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   createApp().listen(config.port, () => {
-    console.log(`OMM subscribe API listening on http://localhost:${config.port}`);
+    console.log(`Newsletter subscribe API listening on http://localhost:${config.port}`);
     console.log(`Listmonk target: ${config.listmonkUrl}${config.dryRun ? " (dry run)" : ""}`);
   });
 }

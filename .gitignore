@@ -4,7 +4,7 @@ node_modules/
 !.env.example
 data/*.jsonl
 subscribe-api/data/*.jsonl
-mailchimp-replacement/uploads/
+newsletter-stack/uploads/
 dist/
 *.zip
 .DS_Store

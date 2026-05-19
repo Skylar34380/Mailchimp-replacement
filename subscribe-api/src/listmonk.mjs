@@ -5,6 +5,10 @@ export async function subscribeToListmonk({ config, subscriber, requestMeta }) {
     list_uuids: config.listUuids,
   };
 
+  if (Object.keys(subscriber.attributes).length) {
+    payload.attribs = subscriber.attributes;
+  }
+
   if (config.dryRun) {
     return {
       ok: true,
@@ -26,7 +30,7 @@ export async function subscribeToListmonk({ config, subscriber, requestMeta }) {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "user-agent": "omm-subscribe-api/0.1",
+      "user-agent": "newsletter-subscribe-api/0.1",
     },
     body: JSON.stringify(payload),
   });

@@ -1,9 +1,9 @@
-# OMM Subscribe API
+# Subscribe API
 
-This service receives Wix form submissions and forwards valid subscribers to Listmonk.
+This service receives website subscription form submissions and forwards valid subscribers to Listmonk.
 
 ```text
-Wix form -> OMM Subscribe API -> Listmonk public subscription API
+Website form -> Subscribe API -> Listmonk public subscription API
 ```
 
 It is intentionally small: no Express, no database dependency, and no build step.
@@ -13,7 +13,6 @@ It is intentionally small: no Express, no database dependency, and no build step
 ```text
 GET  /health
 POST /api/subscribe
-POST /api/wix/subscribe
 ```
 
 `POST /api/subscribe` accepts JSON or form-encoded input.
@@ -22,16 +21,17 @@ Example JSON:
 
 ```json
 {
-  "email": "buyer@example.com",
-  "name": "Buyer Name",
-  "source": "https://www.ommelb.com.au/",
-  "consentText": "I agree to receive property updates from Off Market Melbourne.",
-  "suburbPreference": "Yarraville",
-  "projectTypePreference": "Townhouse"
+  "email": "reader@example.com",
+  "name": "Reader Name",
+  "source": "https://www.example.com/newsletter",
+  "consentText": "I agree to receive newsletter updates.",
+  "company": "Example Co",
+  "role": "Marketing Manager",
+  "interests": ["product updates", "events"]
 }
 ```
 
-Wix can also send fields like `firstName`, `lastName`, `pageUrl`, `suburb`, and `projectType`.
+It also accepts fields like `firstName`, `lastName`, `pageUrl`, `company`, `role`, and `interests`.
 
 ## Local Run
 
@@ -60,7 +60,7 @@ Then:
 ```bash
 curl -X POST http://localhost:8787/api/subscribe \
   -H 'Content-Type: application/json' \
-  --data '{"email":"buyer@example.com","name":"Buyer Name","source":"wix-home"}'
+  --data '{"email":"reader@example.com","name":"Reader Name","source":"website-home"}'
 ```
 
 Expected response:
@@ -79,12 +79,12 @@ Or run the built-in dry-run integration test:
 npm run test:dry-run
 ```
 
-This starts the API on a random local port, submits a fake Wix subscriber, verifies the response, and checks that a consent log entry was written.
+This starts the API on a random local port, submits a fake subscriber, verifies the response, and checks that a consent log entry was written.
 
 ## Connect To Listmonk
 
 1. Run Listmonk.
-2. Create a public list such as `OMM Property Updates`.
+2. Create a public list such as `Newsletter Updates`.
 3. Copy the list UUID.
 4. Set:
 
@@ -104,9 +104,14 @@ with:
 
 ```json
 {
-  "email": "buyer@example.com",
-  "name": "Buyer Name",
-  "list_uuids": ["your-public-list-uuid"]
+  "email": "reader@example.com",
+  "name": "Reader Name",
+  "list_uuids": ["your-public-list-uuid"],
+  "attribs": {
+    "company": "Example Co",
+    "role": "Marketing Manager",
+    "interests": ["product updates", "events"]
+  }
 }
 ```
 
@@ -118,14 +123,14 @@ Every successful validation attempt writes an append-only JSONL entry to:
 data/consent-log.jsonl
 ```
 
-This records email, name, source, consent text, timestamp, user agent, origin and Listmonk response status.
+This records email, name, source, consent text, custom attributes, timestamp, user agent, origin and Listmonk response status.
 
-## Wix Setup
+## Website Setup
 
-In Wix, configure the signup form to send a webhook or custom form submit to:
+Configure the signup form on your website or app to send a webhook or custom form submit to:
 
 ```text
-https://subscribe.your-domain.com/api/wix/subscribe
+https://subscribe.your-domain.com/api/subscribe
 ```
 
 Recommended fields:
@@ -134,16 +139,18 @@ Recommended fields:
 - `firstName`
 - `lastName`
 - `pageUrl`
-- `suburb`
-- `projectType`
+- `source`
 - `consentText`
+- `company`
+- `role`
+- `interests`
 
-Add a hidden honeypot field named `website`, `company`, or `honeypot`. Real users leave it empty; spam bots often fill it.
+Add a hidden honeypot field named `website`, `honeypot`, or `_gotcha`. Real users leave it empty; spam bots often fill it.
 
 ## Production Notes
 
 - Put the API behind HTTPS.
-- Set `ALLOWED_ORIGINS` to the real Wix domains.
+- Set `ALLOWED_ORIGINS` to the real website domains.
 - Keep `CONSENT_LOG_PATH` on persistent storage.
 - Monitor 4xx/5xx errors.
 - Use Listmonk for campaigns, opens, clicks, unsubscribes and bounces.
